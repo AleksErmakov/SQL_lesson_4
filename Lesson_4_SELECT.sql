@@ -35,16 +35,14 @@ ORDER BY artist.name_alias;
 
 --5. названия сборников, в которых присутствует конкретный исполнитель (выберите сами);
 
-SELECT c.name 
+SELECT DISTINCT c.name 
 FROM collection AS c 
 JOIN track_collection AS tc ON c.id = tc.collection_id  
 JOIN track AS t ON tc.track_id = t.id 
 JOIN album AS a ON t.album_id = a.id 
 JOIN artist_album AS aa ON a.id = aa.album_id 
 JOIN artist AS a2 ON aa.artist_id  = a2.id  
-WHERE a2.name_alias = 'Frank Sinatra'
-GROUP BY c.name
-ORDER BY c.name;
+WHERE a2.name_alias = 'Frank Sinatra';
 
 --6. название альбомов, в которых присутствуют исполнители более 1 жанра;
 
@@ -69,21 +67,26 @@ WHERE c.name IS NULL;
 
 --8. исполнителя(-ей), написавшего самый короткий по продолжительности трек (теоретически таких треков может быть несколько);
 
-SELECT a.name_alias
+SELECT DISTINCT a.name_alias
 FROM artist AS a
 JOIN artist_album AS aa
 ON a.id = aa.artist_id 
 JOIN track AS t
 ON aa.album_id = t.album_id
-WHERE t.duration = (SELECT min(duration) FROM track)
-GROUP BY a.name_alias; 
+WHERE t.duration = (SELECT min(duration) FROM track); 
 
 --9. название альбомов, содержащих наименьшее количество треков.
 
-SELECT a.name  
-FROM album AS a
-JOIN track AS t 
-ON a.id = t.album_id
+SELECT a.name
+FROM track AS t
+JOIN album AS a  
+ON t.album_id = a.id
 GROUP BY a.name
-ORDER BY COUNT(a.name)
-LIMIT 1;
+HAVING COUNT(t.name) = (
+	SELECT COUNT(t2.name)  
+	FROM track AS t2
+	JOIN album AS a2
+	ON t2.album_id = a2.id 
+	GROUP BY a2.name
+	ORDER BY COUNT(t2.name)
+	LIMIT 1);
